@@ -1,0 +1,185 @@
+# This is the main config to the model Credit Risk
+
+model_name: credit_risk
+# General Configs
+# It is used to define general parameters and behavior of the model
+
+# Random seed
+# Change in this number invalidates all Out-Of-Fold, Test-Set and Cross-Validation evaluations 
+# so the models MUST BE RETRAINED
+random_seed: 4321
+# The path where experiments will be writen
+model_path: './experiments/credit_risk'
+data_path: './data'
+# The proportion of data to be used as final test. This data can be touched until the last evaluation!!!
+test_size: 0.1
+# List of experiments to run
+experiments: [lgbm]
+
+# Experiment Configs
+# It is used to drive the behavior of each specific experiment inside Credit Risk
+# It can change hyperparameter, models, preprocessing procedures and so on ...
+lgbm:
+    actions:  [cross_validation, train, final_validation, predict]
+    prediction_path: ./new_data
+    
+    # Preprocessing Parameters
+    # It defines a preprocessing pipeline and its parameters
+    feat_engineering: [[zscore,ZScoreFeatureEngineering],[feat_eng,GeneralFeatureEngineering]]
+    pipeline_parameters:
+        feat_union__cat_features__constrainer__min_occurrences: 15
+        # Missing Data:
+        feat_union__cat_features__missing_strat__strategy: constant
+        feat_union__num_features__missing_strat__strategy: constant  
+    
+    x_features: [
+    # -----------------------Categorical Features ----------------------------
+                 score_1, score_2, reason, facebook_profile, state,user_agent,
+                 zip, email, job_name,real_state, marketing_channel, shipping_state, 
+                 shipping_zip_code, profile_tags, 
+                 # ------------ Feature Engineering
+                 estimated_state, estimated_district, estimated_gender, 
+                 profile_phone_number_ddd, name_size,
+                 state_shipping_state, estimated_state_shipping_state,facebook_profile_state,
+    # -----------------------Numerical Features ----------------------------
+                 score_3,score_4,score_5,score_6,
+                 risk_rate,credit_limit,income,
+                 n_defaulted_loans, n_issues,application_time_in_funnel,
+                 external_data_provider_credit_checks_last_month,
+                 external_data_provider_credit_checks_last_year,external_data_provider_fraud_score,
+                 reported_income,lat,lon,application_time_applied,
+                 # ------------ Feature Engineering
+                 zscore_state_income, zscore_state_score_3, zscore_state_score_4, zscore_state_score_5, zscore_state_score_6,
+                 zscore_state_risk_rate, zscore_state_risk_rate, zscore_state_credit_limit, zscore_state_application_time_applied,
+                 zscore_state_lat, zscore_state_lon, zscore_state_external_data_provider_email_seen_before,
+                 zscore_real_state_state_income,  zscore_email_external_data_provider_email_seen_before, zscore_facebook_profile_income,
+                 
+                 score_3_sum2_score_4, score_3_sum2_score_6, score_4_sum2_score_6,
+                 score_3_squared, score_4_squared, score_5_squared, score_6_squared,
+                 score_3_times_score_6, score_4_times_score_6, score_5_times_score_6,
+                 credit_limit_minus_reported_income,
+                 
+                 zscore_state_last_amount_borrowed,last_amount_borrowed,last_borrowed_in_months,
+                 
+                 distance_state,
+                 ]
+    y_target: target_default
+    
+    # Model Parameters
+    model: LGBMClassifierWrapper
+    model_params: 
+        model__learning_rate: 0.004
+        model__n_estimators: 10000
+        model__max_depth: 7
+        model__num_leaves: 8
+        model__max_bin: 512
+        model__subsample: 0.9
+        model__subsample_freq: 1
+        model__colsample_bytree: 0.1
+        model__min_data_in_leaf: 50
+        model__verbose: 1
+        model__categorical_feature: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
+        model__early_stopping_rounds: 1000
+        model__scale_pos_weight: 1.5
+        model__seed: 1234
+        model__min_data_per_group: 250
+        model__max_cat_threshold: 512
+    model_metrics:
+        auc: 
+            score: roc_auc_score
+        acc: 
+            score: accuracy_score
+        fbeta: 
+            score: fbeta_score
+            params:
+                beta: 0.25
+    
+        
+    kfold_strategy: stratified
+    n_folds: 5
+    
+    grid_search_save_best_pipeline: True
+    grid_search_params:
+        #model__max_depth: [3, 4]
+        #model__num_leaves: [5, 8, 10]
+        #model__max_bin: [512, 1024]
+        #model__scale_pos_weight: [1.5 1.75, 2]
+        #model__learning_rate: [0.005, 0.0075]
+        #preprocessing__drop_features: [ [], ['shipping_zip_code','external_data_provider_credit_checks_last_2_year','n_defaulted_loans','n_bankruptcies']]
+        #model__lambda_l1: [0.5, 0.25]
+        model__min_data_per_group: [100, 250, 400]
+        model__max_cat_threshold: [32, 64, 128]
+
+random_forest:
+    actions:  [cross_validation]
+    preprocessing_pipeline: 'RFPreprocessingPipeline'
+    preprocessing_pipeline_params: 
+        categorical: ['score_1','score_2']
+    
+    model: 'RandomForestClassifier'
+    model_params: 
+        class_weight: 
+            0: 1.0
+            1: 3.0
+        max_depth: 50
+        min_samples_leaf: 100
+        n_estimators: 1000
+    
+    x_features: ['score_1','score_2','score_3','score_4','score_5','score_6','risk_rate','last_amount_borrowed',
+                'last_borrowed_in_months','income','facebook_profile', 'ok_since', 'n_bankruptcies', 'n_defaulted_loans',
+                'n_accounts', 'n_issues', 'reported_income','external_data_provider_fraud_score','application_time_in_funnel']
+    y_target: 'target_default'
+    
+    kfold_strategy: random
+    n_folds: 5
+    
+    grid_search_save_best_pipeline: True
+    grid_search_params:
+        model__n_estimators: [250, 500, 1000]
+        model__max_depth: [10, 50]
+        model__min_samples_leaf: [50,100]
+        model__max_features: ['auto', 0.25, 0.75]
+
+sgd_classifier:
+    actions:  [cross_validation]
+    
+    feat_engineering: [[zscore,ZScoreFeatureEngineering],[feat_eng,CreditCardFeatureEngineering]]
+    cat_transformer: OneHotEncoder
+    num_transformer: StandardScaler
+    pipeline_parameters:
+        feat_union__cat_features__missing_strat__strategy: constant
+        feat_union__num_features__missing_strat__strategy: constant    
+        
+    x_features: [
+            score_1, estimated_state, facebook_profile, state, 
+            
+            score_3,score_4,score_5,score_6,
+            score_3_sum2_score_4, score_3_sum2_score_6, 
+            score_3_squared, score_4_squared, score_6_squared,
+            score_3_times_score_6, score_4_times_score_6, score_5_times_score_6,
+            risk_rate, income, zscore_state_income, zscore_state_risk_rate]
+    
+    model: SGDClassifier
+    model_params:
+        loss: log
+        penalty: l1
+        alpha: 0.00015
+        early_stopping: True
+        n_iter_no_change: 10
+        class_weight:
+            0: 1
+            1: 2.5
+        random_state: 1234        
+            
+    y_target: target_default
+    
+    kfold_strategy: random
+    n_folds: 5
+    
+    grid_search_save_best_pipeline: True
+    grid_search_params:
+        model__n_estimators: [250, 500, 1000]
+        model__max_depth: [10, 50]
+        model__min_samples_leaf: [50,100]
+        model__max_features: ['auto', 0.25, 0.75]
+        

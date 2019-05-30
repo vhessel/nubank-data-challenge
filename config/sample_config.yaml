@@ -1,0 +1,69 @@
+# This is a example config
+#To run a experiment using this config, enter:
+#python main.py -m sample_config
+
+# General Configs
+# It is used to define general parameters and behavior of the model
+
+# Random seed
+# Change in this number invalidates all Out-Of-Fold, Test-Set and Cross-Validation evaluations 
+# so the models MUST BE RETRAINED
+random_seed: 4321
+# The path where experiments will be writen
+model_path: './model/sample_config'
+data_path: './data'
+# The proportion of data to be used as final test. This data won't be touched until the last evaluation!!!
+test_size: 0.1
+# The list of name of the experiments to be run
+experiments: [sample_model]
+
+# Experiments Configs
+# It is used to drive the behavior of each specific experiment inside Credit Risk
+# It can change hyperparameter, models, preprocessing procedures and so on ...
+sample_model:
+    # List of the action to be executed
+    # Valid values are: {grid_search, cross_validation, training, final_evaluation, prediction}
+    actions:  [cross_validation]
+    
+    # Configuration of the input pipeline
+    # It defines a list of initial tranfromations (usually implemented feature engineering) with format (name, Class)
+    feat_engineering: [[identity2,IdentityTransformer],[[identity2,IdentityTransformer]]]
+    # The options to be passed to the input pipeline. It follows the scickit-leard standard
+    pipeline_parameters:
+        feat_union__cat_features__constrainer__min_occurrences: 1
+        feat_union__cat_features__missing_strat__strategy: constant
+        feat_union__num_features__missing_strat__strategy: constant  
+    
+    
+    # List of features to be used in the model
+    # Notice that the list can include the features created in the feature engineering classes
+    x_features: [feat1, feat2, feat3]
+    # Name of the target variable
+    y_target: target_column
+    
+    # Model Configuration
+    model: LogiticRegression
+    model_params:
+        model__loss: log
+        model__penalty: l1
+        model__alpha: 0.00015
+        model__early_stopping: True
+        model__n_iter_no_change: 10
+        model__class_weight:
+            0: 1
+            1: 2
+        model__random_state: 1234        
+    
+    
+    # Cross-Validation Configuration
+    # The strategies types are: {random, stratified}
+    kfold_strategy: stratified
+    n_folds: 5
+    
+    # Grid-Search Configuration
+    # Notice that it allows the search be performed in every parameter of the pipeline (input pipeline or model)
+    grid_search_save_best_pipeline: True
+    grid_search_params:
+        feat_union__cat_features__missing_strat__strategy: [constant, most_frequent]
+        model__alpha: [0.001, 0.0001]
+        

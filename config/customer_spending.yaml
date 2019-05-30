@@ -1,0 +1,152 @@
+# This is the main config to the model Credit Risk
+
+
+# General Configs
+# It is used to define general parameters and behavior of the model
+
+model_name: customer_spending
+
+# Random seed
+# Change in this number invalidates all Out-Of-Fold, Test-Set and Cross-Validation evaluations 
+# so the models MUST BE RETRAINED
+random_seed: 4321
+# The path where experiments will be writen
+model_path: './experiments/customer_spending'
+data_path: './data'
+# The proportion of data to be used as final test. This data can be touched until the last evaluation!!!
+test_size: 0.1
+# List of experiments to run
+experiments: [lgbm]
+
+# Experiment Configs
+# It is used to drive the behavior of each specific experiment inside Credit Risk
+# It can change hyperparameter, models, preprocessing procedures and so on ... 
+lgbm:
+    actions:  [cross_validation, train, final_validation, predict]
+    prediction_path: ./new_data
+    prediction_post_processing: InverseCustomerSpendingTransformer
+    
+    # Preprocessing Parameters
+    # It defines a preprocessing pipeline and its parameters
+    feat_engineering: [[zscore,ZScoreFeatureEngineering],[feat_eng,GeneralFeatureEngineering]]
+    #cat_transformer: OneHotEncoder
+    pipeline_parameters:
+        feat_union__cat_features__constrainer__min_occurrences: 1
+        feat_union__cat_features__missing_strat__strategy: constant
+        feat_union__num_features__missing_strat__strategy: constant
+    
+    x_features: [
+    # -----------------------Categorical Features ----------------------------
+                shortned_user_agent, last_borrowed_in_months, n_issues,
+                real_state, marketing_channel, external_data_provider_email_seen_before,
+                external_data_provider_credit_checks_last_year, score_1, score_2, email,
+                low_reported_income, 
+    # -----------------------Numerical Features ----------------------------
+                # Original Features
+                income, reported_income, 
+                log_income, log_reported_income,
+                credit_limit, external_data_provider_fraud_score,
+                # Z-Score Features
+                 state_income_mean, real_state_state_income_mean, estimated_district_income_mean,
+                # Interaction Features
+                 income_square, reported_income_square,
+                 reported_income_sum2_income,
+                 #score_3_squared, score_4_squared, score_5_squared, score_6_squared,
+                 reported_income_minus_income, reported_income_times_income, reported_income_per_credit_limit,
+                 credit_limit_per_income, credit_limit_per_borrow, reported_income_per_income, borrow_per_income,
+                # Other created features
+                 distance_state,lat,lon,
+                 ]
+    y_target: target_spending
+    
+    # Model Parameters
+    model: LGBMRegressorWrapper
+    model_params: 
+        model__objective: regression_l2
+        model__learning_rate: 0.005
+        model__n_estimators: 5000
+        model__max_depth: 3
+        model__num_leaves: 6
+        model__max_bin: 512
+        model__subsample: 0.9
+        model__subsample_freq: 1
+        model__colsample_bytree: 0.2
+        model__min_data_in_leaf: 10
+        model__verbose: 1
+        model__categorical_feature: [0,1,2,3,4,5,6,7,8,9,10,11]
+        model__early_stopping_rounds: 750
+        model__seed: 1234
+    model_metrics:
+        explained: 
+            score: explained_variance_score
+        mse: 
+            score: mean_squared_error
+        r_square: 
+            score: r2_score
+    
+    kfold_strategy: random
+    n_folds: 5
+    
+    grid_search_save_best_pipeline: True
+    grid_search_params:
+        model__max_depth: [3, 4, 8]
+        model__num_leaves: [5, 8, 10]
+        model__max_bin: [512, 1024]
+
+
+sklearn_regression:
+    actions:  [cross_validation]
+    
+    # Preprocessing Parameters
+    # It defines a preprocessing pipeline and its parameters
+    feat_engineering: [[zscore,ZScoreFeatureEngineering],[feat_eng,GeneralFeatureEngineering]]
+    cat_transformer: OneHotEncoder
+    num_transformer: StandardScaler
+    pipeline_parameters:
+        feat_union__cat_features__constrainer__min_occurrences: 1
+        feat_union__cat_features__missing_strat__strategy: constant
+        feat_union__cat_features__transformer__sparse: False
+        feat_union__num_features__missing_strat__strategy: mean  
+        
+    
+    x_features: [
+    # -----------------------Categorical Features ----------------------------
+                 #state, score_1, score_2, n_accounts,real_state,estimated_district,
+                # ------------ Feature Engineering                
+                #profile_is_cellphone,
+    # -----------------------Numerical Features ----------------------------
+                income, reported_income, 
+                log_income, log_reported_income,
+                credit_limit, external_data_provider_fraud_score,
+                #score_3, score_4, score_5, score_6, 
+                # Z-Score Features
+#                 zscore_state_income, zscore_real_state_state_income, zscore_estimated_district_income,
+                 state_income_mean, real_state_state_income_mean, estimated_district_income_mean,
+                # Interaction Features
+                 income_square, reported_income_square,
+                 reported_income_sum2_income,
+                 #score_3_squared, score_4_squared, score_5_squared, score_6_squared,
+                 reported_income_minus_income, reported_income_times_income, reported_income_per_credit_limit,
+                 credit_limit_per_income, credit_limit_per_borrow, reported_income_per_income, borrow_per_income,
+                # Other created features
+                 distance_state,lat,lon,
+                 ]
+    y_target: target_spending
+    
+    # Model Parameters
+    
+    model: SVR
+    model_params: 
+        model__kernel: rbf
+        #model__alpha: 0.0001
+        ##model__normalize: False
+    model_metrics:
+        explained: 
+            score: explained_variance_score
+        mse: 
+            score: mean_squared_error
+        r_square: 
+            score: r2_score
+    
+    kfold_strategy: random
+    n_folds: 3
