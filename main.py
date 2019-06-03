@@ -23,7 +23,7 @@ class PythonOptions(click.Option):
 def dispatcher(models, actions, debug):
     try:
         for m in models:
-            CONF = yaml.load(open('config/' + m + '.yaml'))
+            CONF = yaml.safe_load(open('config/' + m + '.yaml'))
             
             set_up_model(CONF)
                     

@@ -41,9 +41,9 @@ def load_data(data_path):
     """ 
     Load the CSV files  
     """
-    acquisition_train = pd.read_csv(os.path.join(data_path,'data/acquisition_train.csv'))
-    acquisition_test = pd.read_csv(os.path.join(data_path, 'data/acquisition_test.csv'))
-    spend_train = pd.read_csv(os.path.join(data_path, 'data/spend_train.csv'))
+    acquisition_train = pd.read_csv(os.path.join(data_path,'data/acquisition_train.csv.gz'))
+    acquisition_test = pd.read_csv(os.path.join(data_path, 'data/acquisition_test.csv.gz'))
+    spend_train = pd.read_csv(os.path.join(data_path, 'data/spend_train.csv.gz'))
 
     return acquisition_train, spend_train, acquisition_test
 
@@ -53,8 +53,8 @@ def load_data_preprocessed(data_path):
     Load the data for the training phase
     """
     #acquisition_train = pd.read_csv(os.path.join(data_path,'data/acquisition_train.csv'), dtype=dtypes)
-    spend_train = pd.read_csv(os.path.join(data_path, 'data/spend_train.csv'))
-    acquisition_train, spend_train = load_acquisition_file(os.path.join(data_path,'data/acquisition_train.csv'),data_path , targets_spend_file=spend_train)
+    spend_train = pd.read_csv(os.path.join(data_path, 'data/spend_train.csv.gz'))
+    acquisition_train, spend_train = load_acquisition_file(os.path.join(data_path,'data/acquisition_train.csv.gz'),data_path , targets_spend_file=spend_train)
     #acquisition_test = pd.read_csv(os.path.join(data_path, 'data/acquisition_test.csv'), dtype=dtypes)
     return acquisition_train, spend_train    
 
