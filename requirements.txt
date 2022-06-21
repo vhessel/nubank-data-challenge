@@ -7,7 +7,7 @@ jupyterlab==0.32.1
 lightgbm==2.1.1
 matplotlib==2.2.2
 notebook==5.7.8
-numpy==1.15.2
+numpy==1.22.0
 pandas==0.22.0
 PyYAML==5.1
 reverse-geocoder==1.5.1
